@@ -47,6 +47,13 @@ def download_book_cover(bookimage_url, folder='images/'):
     return filepath
 
 
+def download_comments(book_soup):
+    comments = book_soup.select('div.texts span')
+    if comments:
+        comment_text = [comment.text for comment in comments]
+        return comment_text
+
+
 def main():
     for book_id in range(1, 11):
         try:
@@ -54,14 +61,16 @@ def main():
             response = requests.get(url)
             response.raise_for_status()
             check_for_redirect(response)
-            soup = BeautifulSoup(response.text, 'lxml')
-            title, author = soup.find('h1').text.split('::')
-            # download_txt(book_id, title.strip())
-            bookimage = soup.find('div', class_='bookimage').find('img')['src']
+            book_soup = BeautifulSoup(response.text, 'lxml')
+            title, author = book_soup.find('h1').text.split('::')
+            download_txt(book_id, title.strip())
+            bookimage = book_soup.find('div', class_='bookimage').find('img')['src']
             bookimage_url = urljoin('https://tululu.org', bookimage)
+            comments = download_comments(book_soup)
             print('Заголовок:', title)
             print(bookimage_url)
             download_book_cover(bookimage_url)
+
         except HTTPError:
             pass
 
