@@ -34,7 +34,8 @@ def download_txt(book_id, filename, folder='books/'):
     return filename
 
 
-def download_book_cover(bookimage_url, folder='images/'):
+def download_book_cover(book_soup, folder='images/'):
+    bookimage_url = urljoin('https://tululu.org', book_soup.find('div', class_='bookimage').find('img')['src'])
     if not os.path.exists(folder):
         os.makedirs(folder, exist_ok=True)
     filepath = os.path.join(folder, os.path.basename(bookimage_url))
@@ -54,7 +55,19 @@ def download_comments(book_soup):
         return comment_text
 
 
-def get_books_genres(book_soup):
+def parse_book_page(book_soup):
+    title, author = book_soup.find('h1').text.split('::')
+    image_path = download_book_cover(book_soup)
+    comments = download_comments(book_soup)
+    genres = parse_book_genres(book_soup)
+    return {'title': title.strip(),
+            'author': author,
+            'genre': genres,
+            'book_cover_url': image_path,
+            'comments': comments}
+
+
+def parse_book_genres(book_soup):
     genre_tag = book_soup.select('span.d_book a')
     genres = [genre_tag.text for genre_tag in genre_tag]
     return genres
@@ -68,14 +81,8 @@ def main():
             response.raise_for_status()
             check_for_redirect(response)
             book_soup = BeautifulSoup(response.text, 'lxml')
-            title, author = book_soup.find('h1').text.split('::')
-            download_txt(book_id, title.strip())
-            bookimage = book_soup.find('div', class_='bookimage').find('img')['src']
-            bookimage_url = urljoin('https://tululu.org', bookimage)
-            comments = download_comments(book_soup)
-            genres = get_books_genres(book_soup)
-            download_book_cover(bookimage_url)
-
+            book = parse_book_page(book_soup)
+            download_txt(book_id, book.get('title'))
         except HTTPError:
             pass
 
