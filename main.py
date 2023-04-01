@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -33,6 +34,19 @@ def download_txt(book_id, filename, folder='books/'):
     return filename
 
 
+def download_book_cover(bookimage_url, folder='images/'):
+    if not os.path.exists(folder):
+        os.makedirs(folder, exist_ok=True)
+    filepath = os.path.join(folder, os.path.basename(bookimage_url))
+    url = bookimage_url
+    response = requests.get(url)
+    response.raise_for_status()
+    book = response.text
+    with open(filepath, 'w') as file:
+        file.write(book)
+    return filepath
+
+
 def main():
     for book_id in range(1, 11):
         try:
@@ -42,7 +56,12 @@ def main():
             check_for_redirect(response)
             soup = BeautifulSoup(response.text, 'lxml')
             title, author = soup.find('h1').text.split('::')
-            download_txt(book_id, title.strip())
+            # download_txt(book_id, title.strip())
+            bookimage = soup.find('div', class_='bookimage').find('img')['src']
+            bookimage_url = urljoin('https://tululu.org', bookimage)
+            print('Заголовок:', title)
+            print(bookimage_url)
+            download_book_cover(bookimage_url)
         except HTTPError:
             pass
 
