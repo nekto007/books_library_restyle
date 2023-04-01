@@ -54,6 +54,12 @@ def download_comments(book_soup):
         return comment_text
 
 
+def get_books_genres(book_soup):
+    genre_tag = book_soup.select('span.d_book a')
+    genres = [genre_tag.text for genre_tag in genre_tag]
+    return genres
+
+
 def main():
     for book_id in range(1, 11):
         try:
@@ -67,8 +73,7 @@ def main():
             bookimage = book_soup.find('div', class_='bookimage').find('img')['src']
             bookimage_url = urljoin('https://tululu.org', bookimage)
             comments = download_comments(book_soup)
-            print('Заголовок:', title)
-            print(bookimage_url)
+            genres = get_books_genres(book_soup)
             download_book_cover(bookimage_url)
 
         except HTTPError:
