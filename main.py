@@ -1,3 +1,4 @@
+import argparse
 import os
 from urllib.parse import urljoin
 
@@ -74,7 +75,12 @@ def parse_book_genres(book_soup):
 
 
 def main():
-    for book_id in range(1, 11):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('start_id', nargs='?', help='Enter start book id')
+    parser.add_argument('end_id', nargs='?', help='Enter end book id')
+    start_id = int(parser.parse_args().start_id)
+    end_id = int(parser.parse_args().end_id)
+    for book_id in range(start_id, end_id+1):
         try:
             url = f'https://tululu.org/b{book_id}/'
             response = requests.get(url)
