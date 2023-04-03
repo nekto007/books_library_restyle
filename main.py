@@ -1,11 +1,12 @@
 import argparse
 import os
+import time
 from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
-from requests import HTTPError
+from requests import HTTPError, ConnectionError
 
 
 def check_for_redirect(response):
@@ -22,12 +23,13 @@ def download_txt(book_id, filename, folder='books/'):
     Returns:
         str: Путь до файла, куда сохранён текст.
     """
-    if not os.path.exists(folder):
-        os.makedirs(folder, exist_ok=True)
+    os.makedirs(folder, exist_ok=True)
     filepath = os.path.join(folder, sanitize_filename(filename))
-    url = f'https://tululu.org/txt.php?id={book_id}'
-    response = requests.get(url)
+    url = 'https://tululu.org/txt.php'
+    parameters = {'id': book_id}
+    response = requests.get(url, params=parameters)
     response.raise_for_status()
+    check_for_redirect(response)
     book = response.text
     filename = f'{filepath}.txt'
     with open(filename, 'w') as file:
@@ -35,13 +37,10 @@ def download_txt(book_id, filename, folder='books/'):
     return filename
 
 
-def download_book_cover(book_soup, folder='images/'):
-    bookimage_url = urljoin('https://tululu.org', book_soup.find('div', class_='bookimage').find('img')['src'])
-    if not os.path.exists(folder):
-        os.makedirs(folder, exist_ok=True)
-    filepath = os.path.join(folder, os.path.basename(bookimage_url))
-    url = bookimage_url
-    response = requests.get(url)
+def download_book_cover(image_url, folder='images/'):
+    os.makedirs(folder, exist_ok=True)
+    filepath = os.path.join(folder, os.path.basename(image_url))
+    response = requests.get(image_url)
     response.raise_for_status()
     book = response.text
     with open(filepath, 'w') as file:
@@ -68,6 +67,7 @@ def parse_book_page(book_soup):
 
 
 def main():
+    retry = 0
     parser = argparse.ArgumentParser()
     parser.add_argument('start_id', nargs='?', help='Enter start book id', type=int)
     parser.add_argument('end_id', nargs='?', help='Enter end book id', type=int)
@@ -81,9 +81,16 @@ def main():
             check_for_redirect(response)
             book_soup = BeautifulSoup(response.text, 'lxml')
             book = parse_book_page(book_soup)
+            download_book_cover(urljoin(url, book['book_cover_url']))
             download_txt(book_id, book.get('title'))
         except HTTPError:
-            pass
+            print(f'The book with id {book_id} could not be downloaded. Due to an error, skip it.')
+        except ConnectionError:
+            print('Connection error. Let\'s try again.')
+            if retry:
+                time.sleep(15)
+            retry = 1
+
 
 
 if __name__ == '__main__':
