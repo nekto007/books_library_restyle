@@ -49,37 +49,30 @@ def download_book_cover(book_soup, folder='images/'):
     return filepath
 
 
-def download_comments(book_soup):
-    comments = book_soup.select('div.texts span')
-    if comments:
-        comment_text = [comment.text for comment in comments]
-        return comment_text
-
-
 def parse_book_page(book_soup):
     title, author = book_soup.find('h1').text.split('::')
-    image_path = download_book_cover(book_soup)
-    comments = download_comments(book_soup)
-    genres = parse_book_genres(book_soup)
+
+    image_path = book_soup.find('div', class_='bookimage').find('img')['src']
+
+    comments_tag = book_soup.select('.texts')
+    comments = [comment.select_one('span.black').text for comment in comments_tag]
+
+    genre_tag = book_soup.select('span.d_book a')
+    genres = [genre_tag.text for genre_tag in genre_tag]
+
     return {'title': title.strip(),
-            'author': author,
+            'author': author.strip(),
             'genre': genres,
             'book_cover_url': image_path,
             'comments': comments}
 
 
-def parse_book_genres(book_soup):
-    genre_tag = book_soup.select('span.d_book a')
-    genres = [genre_tag.text for genre_tag in genre_tag]
-    return genres
-
-
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('start_id', nargs='?', help='Enter start book id')
-    parser.add_argument('end_id', nargs='?', help='Enter end book id')
-    start_id = int(parser.parse_args().start_id)
-    end_id = int(parser.parse_args().end_id)
+    parser.add_argument('start_id', nargs='?', help='Enter start book id', type=int)
+    parser.add_argument('end_id', nargs='?', help='Enter end book id', type=int)
+    start_id = parser.parse_args().start_id
+    end_id = parser.parse_args().end_id
     for book_id in range(start_id, end_id+1):
         try:
             url = f'https://tululu.org/b{book_id}/'
