@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
-from requests import HTTPError, ConnectionError
+from requests import ConnectionError, HTTPError
 
 
 def check_for_redirect(response):
@@ -73,7 +73,7 @@ def main():
     parser.add_argument('end_id', nargs='?', help='Enter end book id', type=int)
     start_id = parser.parse_args().start_id
     end_id = parser.parse_args().end_id
-    for book_id in range(start_id, end_id+1):
+    for book_id in range(start_id, end_id + 1):
         try:
             url = f'https://tululu.org/b{book_id}/'
             response = requests.get(url)
@@ -90,7 +90,6 @@ def main():
             if retry:
                 time.sleep(15)
             retry = 1
-
 
 
 if __name__ == '__main__':
