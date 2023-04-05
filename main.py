@@ -24,17 +24,17 @@ def download_txt(book_id, filename, folder='books/'):
         str: Путь до файла, куда сохранён текст.
     """
     os.makedirs(folder, exist_ok=True)
-    filepath = os.path.join(folder, sanitize_filename(filename))
+    filepath = os.path.join(folder, f'{sanitize_filename(filename)}.txt')
     url = 'https://tululu.org/txt.php'
     parameters = {'id': book_id}
     response = requests.get(url, params=parameters)
     response.raise_for_status()
     check_for_redirect(response)
     book = response.text
-    filename = f'{filepath}.txt'
-    with open(filename, 'w') as file:
+    print(filepath)
+    with open(filepath, 'w') as file:
         file.write(book)
-    return filename
+    return filepath
 
 
 def download_book_cover(image_url, folder='images/'):
@@ -42,8 +42,8 @@ def download_book_cover(image_url, folder='images/'):
     filepath = os.path.join(folder, os.path.basename(image_url))
     response = requests.get(image_url)
     response.raise_for_status()
-    book = response.text
-    with open(filepath, 'w') as file:
+    book = response.content
+    with open(filepath, 'wb') as file:
         file.write(book)
     return filepath
 
@@ -71,9 +71,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('start_id', nargs='?', help='Enter start book id', type=int)
     parser.add_argument('end_id', nargs='?', help='Enter end book id', type=int)
-    start_id = parser.parse_args().start_id
-    end_id = parser.parse_args().end_id
-    for book_id in range(start_id, end_id + 1):
+    args = parser.parse_args()
+
+    for book_id in range(args.start_id, args.end_id + 1):
         try:
             url = f'https://tululu.org/b{book_id}/'
             response = requests.get(url)
