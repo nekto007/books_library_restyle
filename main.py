@@ -31,7 +31,6 @@ def download_txt(book_id, filename, folder='books/'):
     response.raise_for_status()
     check_for_redirect(response)
     book = response.text
-    print(filepath)
     with open(filepath, 'w') as file:
         file.write(book)
     return filepath
