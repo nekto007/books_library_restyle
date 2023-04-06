@@ -48,9 +48,9 @@ def download_book_cover(image_url, folder='images/'):
 
 
 def parse_book_page(book_soup):
-    title, author = book_soup.find('h1').text.split('::')
+    title, author = book_soup.select_one('h1').text.split('::')
 
-    image_path = book_soup.find('div', class_='bookimage').find('img')['src']
+    image_path = book_soup.select_one('div .bookimage img')['src']
 
     comments_tag = book_soup.select('.texts')
     comments = [comment.select_one('span.black').text for comment in comments_tag]
