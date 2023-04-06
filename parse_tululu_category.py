@@ -19,7 +19,7 @@ retry = 0
 all_books_links = []
 for page in range(args.start_page, args.end_page):
     try:
-        url = 'https://tululu.org/l55/'
+        url = f'https://tululu.org/l55/{page}'
         response = requests.get(url)
         response.raise_for_status()
         category_soap = BeautifulSoup(response.text, 'lxml')
