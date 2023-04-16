@@ -1,6 +1,7 @@
 import argparse
 import json
 import time
+import os
 from urllib.parse import urljoin
 
 import requests
@@ -12,8 +13,14 @@ from main import check_for_redirect, download_book_cover, download_txt, parse_bo
 parser = argparse.ArgumentParser(
     description='Program download books from free online-library tululu.org'
 )
-parser.add_argument('start_page', type=int, help='number of the first processed page')
-parser.add_argument('end_page', type=int, help='number of the last processed page')
+parser.add_argument('--start_page', type=int, help='number of the first processed page', default=1)
+parser.add_argument('--end_page', type=int, help='number of the last processed page', default=2)
+parser.add_argument('--dest_folder', type=str, help='path to the directory with parsing results: pictures, books, JSON.'
+                    , default=os.getcwd())
+parser.add_argument('--skip_imgs', action='store_true', help='don\'t download pictures')
+parser.add_argument('--skip_txt', action='store_true', help='don\'t download book')
+parser.add_argument('--json_path', type=str, help='specify your path to the *.json file with the results'
+                    , default='books')
 args = parser.parse_args()
 retry = 0
 all_books_links = []
@@ -35,16 +42,19 @@ for page in range(args.start_page, args.end_page):
         retry = 1
 books = []
 for book_url in all_books_links:
+    os.chdir(os.path.normpath(args.dest_folder))
     try:
         response = requests.get(book_url)
         response.raise_for_status()
         check_for_redirect(response)
         book_soup = BeautifulSoup(response.text, 'lxml')
         book = parse_book_page(book_soup)
-        download_book_cover(urljoin(book_url, book['book_cover_url']))
+        if not args.skip_imgs:
+            download_book_cover(urljoin(book_url, book['book_cover_url']))
         books.append(book)
         book_id = int(book_url[book_url.rfind('b') + 1:-1])
-        download_txt(book_id, book.get('title'))
+        if not args.skip_txt:
+            download_txt(book_id, book.get('title'))
     except HTTPError:
         print(f'The book with id {book_id} could not be downloaded. Due to an error, skip it.')
     except ConnectionError:
@@ -52,5 +62,5 @@ for book_url in all_books_links:
         if retry:
             time.sleep(15)
         retry = 1
-    with open('books.json', 'w') as file:
+    with open(f'{args.json_path}.json', 'w') as file:
         json.dump(books, file, ensure_ascii=False)
