@@ -24,7 +24,7 @@ From the project folder, at the command line, type `python main.py <--start_page
 python main.py 30 50
 ```
 
-The program will start downloading books from pages 30 to 50
+The program will start downloading books from pages 30 to 50.
 
 4. Arguments
 
